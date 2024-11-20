@@ -1,4 +1,4 @@
-package handler
+package main
 
 import (
 	"encoding/json"
@@ -7,15 +7,12 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-
-	"github.com/Wassy4/receipt-processor/models"
-	"github.com/wassy4/receipt-processor/utils"
 )
 
-var receipts = make(map[string]models.Receipt)
+var receipts = make(map[string]Receipt)
 
 func ProcessReceipt(w http.ResponseWriter, r *http.Request) {
-	var receipt models.Receipt
+	var receipt Receipt
 
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -30,7 +27,7 @@ func ProcessReceipt(w http.ResponseWriter, r *http.Request) {
 	id := uuid.NewString()
 	receipts[id] = receipt
 
-	response := models.ProcessReceiptResponse{Id: id}
+	response := ProcessReceiptResponse{Id: id}
 	w.Header().Set("Content-Type", "application/json")
 	json.Marshal(response)
 }
@@ -43,14 +40,14 @@ func GetPoints(w http.ResponseWriter, r *http.Request) {
 
 	path := strings.Split(r.URL.Path, "/")
 	id := path[1]
-	receipt := receipts[id]
-	if !receipt {
+	receipt, exists := receipts[id]
+	if !exists {
 		http.Error(w, "Receipt not found", http.StatusNotFound)
 		return
 	}
 
-	points := utils.CalculatePoints(receipt)
-	response := models.GetPointsResponse{Points: points}
+	points := CalculatePoints(receipt)
+	response := GetPointsResponse{Points: points}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.Marshal(response)

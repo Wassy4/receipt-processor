@@ -1,4 +1,4 @@
-package handler_test
+package main
 
 import (
 	"bytes"
@@ -6,13 +6,10 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-
-	"github.com/Wassy4/receipt-processor/handler"
-	"github.com/Wassy4/receipt-processor/models"
 )
 
 func TestProcessReceipt(t *testing.T) {
-	h := handler.ProcessReceipt
+	h := ProcessReceipt
 
 	tests := []struct {
 		name             string
