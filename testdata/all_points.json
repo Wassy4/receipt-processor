@@ -1,0 +1,10 @@
+{
+    "retailer": "T@rget7",
+    "purchaseDate": "2022-01-03",
+    "purchaseTime": "15:00",
+    "total": "6.00",
+    "items": [
+        {"shortDescription": "Pepsi", "price": "1.00"},
+        {"shortDescription": "Coca-Cola", "price": "5.00"}
+    ]
+}
