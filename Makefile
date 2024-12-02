@@ -8,4 +8,10 @@ build:
 	docker build -t receipt-processor .
 
 run:
-	go run webservice.go
+	docker run -d -p 8080:8080 --name alex-wasserman-receipt-processor receipt-processor
+
+stop:
+	docker stop alex-wasserman-receipt-processor
+
+delete:
+	docker rm alex-wasserman-receipt-processor

@@ -3,13 +3,21 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 )
 
 func TestProcessReceipt(t *testing.T) {
-	h := ProcessReceipt
+	db, err := InitDB()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+	handler := setupMux(db)
 
 	tests := []struct {
 		name             string
@@ -19,7 +27,7 @@ func TestProcessReceipt(t *testing.T) {
 		validateResponse bool
 	}{
 		{
-			name:             "Valid request",
+			name:             "Valid request payload",
 			method:           "POST",
 			payload:          "testdata/provided_example1.json",
 			expectedStatus:   http.StatusOK,
@@ -44,17 +52,21 @@ func TestProcessReceipt(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			w := httptest.NewRecorder()
-			req := httptest.NewRequest(test.method, "/receipts/process",
-				bytes.NewBufferString(test.payload))
 
-			h.ServeHTTP(w, req)
+			file, err := os.ReadFile(test.payload)
+			if err != nil {
+				t.Fatal(err)
+			}
+			req := httptest.NewRequest(test.method, "/receipts/process", bytes.NewBuffer(file))
+
+			handler.ServeHTTP(w, req)
 
 			if w.Code != test.expectedStatus {
 				t.Errorf("Expected status %v, got %v", test.expectedStatus, w.Code)
 			}
 
 			if test.validateResponse {
-				var response models.ProcessReceiptResponse
+				var response ProcessReceiptResponse
 				err := json.NewDecoder(w.Body).Decode(&response)
 				if err != nil {
 					t.Errorf("Failed to decode response: %v", err)
@@ -68,14 +80,20 @@ func TestProcessReceipt(t *testing.T) {
 }
 
 func TestGetPoints(t *testing.T) {
-	h := handler.ProcessReceipt
+	db, err := InitDB()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
 
-	receipt := models.Receipt{
+	handler := setupMux(db)
+
+	receipt := Receipt{
 		Retailer:     "Target",
 		PurchaseDate: "2022-01-01",
 		PurchaseTime: "13:01",
 		Total:        "35.35",
-		Items: []models.ReceiptItem{
+		Items: []ReceiptItem{
 			{
 				ShortDescription: "Mountain Dew 12PK",
 				Price:            "6.49",
@@ -103,11 +121,10 @@ func TestGetPoints(t *testing.T) {
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest("POST", "/receipts/process",
 		bytes.NewBuffer(receiptJSON))
-	h.ServeHTTP(w, req)
+	handler.ServeHTTP(w, req)
 
-	var response models.ProcessReceiptResponse
+	var response ProcessReceiptResponse
 	json.NewDecoder(w.Body).Decode(&response)
-	receiptID := response.ID
 
 	tests := []struct {
 		name           string
@@ -120,7 +137,7 @@ func TestGetPoints(t *testing.T) {
 		{
 			name:           "Valid request",
 			method:         "GET",
-			path:           "/receipts/" + receiptID + "/points",
+			path:           "/receipts/" + response.Id + "/points",
 			expectedStatus: http.StatusOK,
 			expectPoints:   true,
 			expectedPoints: 28, // 6 (retailer) + 10 (items) + 6 (multiples of 3) + 6 (purchase date)
@@ -135,7 +152,7 @@ func TestGetPoints(t *testing.T) {
 		{
 			name:           "Wrong HTTP method",
 			method:         "POST",
-			path:           "/receipts/" + receiptID + "/points",
+			path:           "/receipts/" + response.Id + "/points",
 			expectedStatus: http.StatusMethodNotAllowed,
 			expectPoints:   false,
 		},
@@ -153,7 +170,7 @@ func TestGetPoints(t *testing.T) {
 			}
 
 			if test.expectPoints {
-				response := models.GetPointsResponse
+				var response GetPointsResponse
 				err := json.NewDecoder(w.Body).Decode(&response)
 				if err != nil {
 					t.Errorf("Failed to decode response: %v", err)

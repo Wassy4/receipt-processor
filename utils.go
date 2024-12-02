@@ -35,7 +35,7 @@ func pointsFromTotal(points *int, total string) {
 
 func pointsFromItems(points *int, items []ReceiptItem) {
 	// 5 points for every two items on the receipt.
-	pairs := int(math.Floor(float64(len(items) / 2)))
+	pairs := len(items) / 2
 	*points += pairs * 5
 
 	/**

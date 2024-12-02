@@ -19,8 +19,8 @@ func TestCalculatePoints(t *testing.T) {
 		},
 		{
 			name:     "All of the points",
-			filepath: "testdata/points.json",
-			expected: 103, // 6 (retailer) + 75 (total) + 6 (items) + 6 (purchase date) + 10 (purchase time)
+			filepath: "testdata/all_points.json",
+			expected: 103, // 5 (retailer) + 75 (total) + 6 (items) + 6 (purchase date) + 10 (purchase time)
 		},
 		{
 			name:     "Provided example case #1",

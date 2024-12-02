@@ -1,5 +1,15 @@
 package main
 
+import (
+	"log"
+)
+
 func main() {
-	HandleRequests()
+	db, err := InitDB()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+	HandleRequests(db)
 }
